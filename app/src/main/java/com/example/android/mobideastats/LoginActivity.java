@@ -281,7 +281,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     public void startWithDummyData(View view) {
-        Intent intent = new Intent(this, StatsActivity.class);
+        Intent intent = new Intent(this, ConversionsActivity.class);
         startActivity(intent);
     }
 
