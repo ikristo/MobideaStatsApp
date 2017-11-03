@@ -30,6 +30,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -281,7 +282,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     public void startWithDummyData(View view) {
-        Intent intent = new Intent(this, ConversionsActivity.class);
+        Intent intent = new Intent(this, MonthlyActivity.class);
         startActivity(intent);
     }
 

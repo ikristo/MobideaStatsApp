@@ -32,7 +32,8 @@
         <activity
             android:name=".ConversionsActivity"
             android:label="@string/title_activity_conversions"
-            android:theme="@style/AppTheme"></activity>
+            android:theme="@style/AppTheme" />
+        <activity android:name=".MonthlyActivity"></activity>
     </application>
 
 </manifest>

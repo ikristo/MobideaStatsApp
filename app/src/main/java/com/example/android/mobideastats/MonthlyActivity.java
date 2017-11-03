@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity {
+public class MonthlyActivity extends AppCompatActivity {
 
 
     double total;
@@ -113,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         url = "https://affiliates.mobidea.com/api/export/stats/http-xml?login=260147900&password=b7487c967a25aba9ec078d164268197f" +
                 "&date=" + urlDate + "&currency=USD&format=xml";
 
-        mDatePicker.setText(urlDate);
+        mDatePicker.setText(urlDate + "  ");
     }
 
 
@@ -147,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
                             calculateTotal();
                         } else {
                             hideRecyclerView();
-                            Toast.makeText(MainActivity.this, "No conversions!", Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(MainActivity.this, "No conversions!", Toast.LENGTH_SHORT).show();
                         }
 
 
@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(MainActivity.this, "Unable to fetch data!", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(MainActivity.this, "Unable to fetch data!", Toast.LENGTH_SHORT).show();
             }
         });
 // Add the request to the RequestQueue.
@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void hideRecyclerView() {
-    recyclerView.setVisibility(View.INVISIBLE);
+        recyclerView.setVisibility(View.INVISIBLE);
 
     }
 

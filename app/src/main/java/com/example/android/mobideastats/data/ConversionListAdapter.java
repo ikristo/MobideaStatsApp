@@ -36,7 +36,7 @@ public class ConversionListAdapter extends RecyclerView.Adapter<ConversionListAd
 
 
         holder.tv1.setText(item.getmDate());
-        holder.tv2.setText(item.getmCampaign());
+//        holder.tv2.setText(item.getmCampaign());
         holder.tv3.setText(item.getmCountry());
         holder.tvRevenue.setText("$" + String.format("%.2f", item.getmRevenue()));
 
@@ -59,7 +59,7 @@ public class ConversionListAdapter extends RecyclerView.Adapter<ConversionListAd
             super(itemView);
 
             tv1 = (TextView) itemView.findViewById(R.id.tvDateOfConversion);
-            tv2 = (TextView) itemView.findViewById(R.id.textView2);
+//            tv2 = (TextView) itemView.findViewById(R.id.textView2);
             tv3 = (TextView) itemView.findViewById(R.id.tvCountryCode);
             tvRevenue = (TextView) itemView.findViewById(R.id.tvrevenue);
         }
