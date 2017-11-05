@@ -26,6 +26,8 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.android.mobideastats.data.CheckNetworkState;
+import com.example.android.mobideastats.data.DailyDataItem;
+import com.example.android.mobideastats.data.DailyListAdapter;
 import com.example.android.mobideastats.data.DataItem;
 import com.example.android.mobideastats.data.ConversionListAdapter;
 import com.example.android.mobideastats.data.XMLParser;
@@ -37,150 +39,135 @@ import java.util.Date;
 
 public class MonthlyActivity extends AppCompatActivity {
 
-
     double total;
     private RecyclerView recyclerView;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    private TextView mDatePicker;
-
     ArrayList<DataItem> dataItems = null;
+
     public String url;
-    private DatePicker datePicker;
-    private Calendar calendar;
-    private TextView dateView;
     private int year, month, day;
+    ArrayList<DailyDataItem> dailyDataItems = new ArrayList<>();
+    int numberOfDays = 7;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_monthly);
 
-        mDatePicker = findViewById(R.id.tvDatePicker);
+        isThereActiveNetworkConnection();
 
-        calendar = Calendar.getInstance();
+        for (int i = 0; i < numberOfDays; i++) {
+            String queryUrl = createUrl(i);
+            getData(queryUrl, createDate(i));
+
+        }
+
+
+    }
+
+
+    ///////////////// Get date today \\\\\\\\\\\\
+    public Calendar todayIs() {
+
+        Calendar calendar = Calendar.getInstance();
         year = calendar.get(Calendar.YEAR);
         month = calendar.get(Calendar.MONTH);
         day = calendar.get(Calendar.DAY_OF_MONTH);
+        return calendar;
+    }
 
-        createUrl();
+//////////////// Check is there active network connection \\\\\\\\\\
 
-
-//        Check is there active network connection
+    public void isThereActiveNetworkConnection() {
         if (CheckNetworkState.isNetworkAvailable(this)) {
             Toast.makeText(this, "Downloading data!", Toast.LENGTH_SHORT).show();
             //        Get Data
-            getData(url);
         } else {
             Toast.makeText(this, "No network connection!", Toast.LENGTH_SHORT).show();
         }
+    }
 
+///////////// Create queried URL \\\\\\\\\\\\\\\
+    /*
+    * arg i -> number of days back from today
+    **/
+
+    private String createUrl(int i) {
+
+        String urlDate = createDate(i);
+        String BASE_URL = "https://affiliates.mobidea.com/api/export/stats/http-xml?";
+        String login = "260147900";
+        String password = "b7487c967a25aba9ec078d164268197f";
+
+        url = BASE_URL + "login=" + login + "&password=" + password +
+                "&date=" + urlDate + "&currency=USD&format=xml";
+
+        return url;
 
     }
 
-
-    @Override
-    protected Dialog onCreateDialog(int id) {
-        if (id == 999) {
-            return new DatePickerDialog(this, myDateListener, year, month, day);
-        }
-        return null;
-    }
-
-
-    private DatePickerDialog.OnDateSetListener myDateListener = new DatePickerDialog.OnDateSetListener() {
-
-        @Override
-        public void onDateSet(DatePicker arg0, int arg1, int arg2, int arg3) {
-            year = arg1;
-            month = arg2;
-            day = arg3;
-
-
-            createUrl();
-            getData(url);
-        }
-    };
-
-    private void createUrl() {
-
-        calendar.set(year, month, day);
+    private String createDate(int i) {
+        Calendar calendar = todayIs();
+        calendar.add(calendar.DAY_OF_YEAR, -i);
         Date date = calendar.getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String urlDate = sdf.format(date);
-
-
-        url = "https://affiliates.mobidea.com/api/export/stats/http-xml?login=260147900&password=b7487c967a25aba9ec078d164268197f" +
-                "&date=" + urlDate + "&currency=USD&format=xml";
-
-        mDatePicker.setText(urlDate + "  ");
+        return urlDate;
     }
 
-
-    private void runRecyclerView() {
+    ///////////// Show data in RecyclerView \\\\\\\\\\\\
+    /*
+    * args ArrayList dailyDataItems
+    * */
+    private void runRecyclerView(ArrayList dailyDataItems) {
 
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        recyclerView.setVisibility(View.VISIBLE);
-        mLayoutManager = new LinearLayoutManager(getApplicationContext());
-        recyclerView.setLayoutManager(mLayoutManager);
 
-        mAdapter = new ConversionListAdapter(this, dataItems);
-        recyclerView.setAdapter(mAdapter);
-
-
-        recyclerView.scrollToPosition(dataItems.size() - 1);
-
+        if (dailyDataItems != null) {
+            recyclerView.setVisibility(View.VISIBLE);
+            mLayoutManager = new LinearLayoutManager(getApplicationContext());
+            recyclerView.setLayoutManager(mLayoutManager);
+            mAdapter = new DailyListAdapter(this, dailyDataItems);
+            recyclerView.setAdapter(mAdapter);
+            recyclerView.scrollToPosition(dailyDataItems.size() - 1);
+        } else {
+            recyclerView.setVisibility(View.INVISIBLE);
+        }
     }
 
-    private void getData(String url) {
-        // Instantiate the RequestQueue.
+
+    ////////////// Volley side thread request \\\\\\\\\\\\\
+    private void getData(String url, final String conversionDate) {
+
         RequestQueue queue = Volley.newRequestQueue(this);
 
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        dataItems = XMLParser.parseFeed(response);
-                        if (dataItems != null) {
-                            runRecyclerView();
-                            calculateTotal();
-                        } else {
-                            hideRecyclerView();
-//                            Toast.makeText(MainActivity.this, "No conversions!", Toast.LENGTH_SHORT).show();
-                        }
-
-
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                dataItems = XMLParser.parseFeed(response);
+                if (dataItems != null) {
+                    for (DataItem item : dataItems) {
+                        total += item.getmRevenue();
                     }
-                }, new Response.ErrorListener() {
+                } else {
+                    total = 0;
+                }
+                dailyDataItems.add(new DailyDataItem(conversionDate, total));
+                total = 0;
+            }
+        }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-//                Toast.makeText(MainActivity.this, "Unable to fetch data!", Toast.LENGTH_SHORT).show();
             }
         });
-// Add the request to the RequestQueue.
-
         queue.add(stringRequest);
 
-    }
-
-    private void hideRecyclerView() {
-        recyclerView.setVisibility(View.INVISIBLE);
 
     }
 
-    private void calculateTotal() {
-        for (DataItem item : dataItems) {
-            total += item.getmRevenue();
-        }
-        TextView tvTotal = (TextView) findViewById(R.id.total);
-        tvTotal.setText("Total: " + String.format("%.2f", total));
-        total = 0;
-    }
-
-
-    public void datePicker(View view) {
-        showDialog(999);
+    public void pokreniRecycler(View view) {
+        runRecyclerView(dailyDataItems);
 
     }
 }
