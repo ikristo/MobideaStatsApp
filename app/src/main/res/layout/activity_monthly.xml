@@ -52,7 +52,7 @@
     <View
         android:id="@+id/topDivider"
         android:layout_width="fill_parent"
-        android:layout_height="1dp"
+        android:layout_height="2dp"
         android:layout_marginBottom="8dp"
         android:background="#c0c0c0"
         app:layout_constraintBottom_toTopOf="@+id/lLayoutColumnNames"
@@ -112,17 +112,6 @@
         android:layout_marginTop="8dp"
         android:entries="@array/monthly_overview"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/runRacycler"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:onClick="pokreniRecycler"
-        android:layout_marginTop="8dp"
-        android:text="RUN"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
 
