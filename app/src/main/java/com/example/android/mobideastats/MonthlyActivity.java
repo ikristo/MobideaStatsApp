@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +27,8 @@ import com.squareup.otto.Subscribe;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 
 public class MonthlyActivity extends AppCompatActivity {
@@ -38,11 +42,14 @@ public class MonthlyActivity extends AppCompatActivity {
     public String url;
     private int year, month, day;
     ArrayList<DailyDataItem> dailyDataItems = new ArrayList<>();
+    ArrayList<DailyDataItem> sortedDailyDataItems = new ArrayList<>();
+
     int numberOfDays = 7;
     int i = 0;
 
     TextView tvTotalMonthly;
     Double totalMonthly = 0.00;
+    Spinner spinnerIntervalChooser;
 
 
     @Override
@@ -52,13 +59,38 @@ public class MonthlyActivity extends AppCompatActivity {
         BusStation.getBus().register(this);
         isThereActiveNetworkConnection();
         tvTotalMonthly = findViewById(R.id.total);
+        spinnerIntervalChooser = findViewById(R.id.spinner1);
 
+        startProcess();
+
+
+       /* spinnerIntervalChooser.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+
+                switch (String.valueOf(spinnerIntervalChooser.getSelectedItemId())) {
+                    case "0": numberOfDays = 7;
+                        startProcess();
+                        break;
+                    case "1": numberOfDays = 30;
+                        startProcess();
+                        break;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+            }
+        });
+*/
+
+    }
+
+    private void startProcess() {
         for (int i = 0; i < numberOfDays; i++) {
             String queryUrl = createUrl(i);
             getData(queryUrl, createDate(i));
-
         }
-
 
     }
 
@@ -76,10 +108,7 @@ public class MonthlyActivity extends AppCompatActivity {
 //////////////// Check is there active network connection \\\\\\\\\\
 
     public void isThereActiveNetworkConnection() {
-        if (CheckNetworkState.isNetworkAvailable(this)) {
-            Toast.makeText(this, "Downloading data!", Toast.LENGTH_SHORT).show();
-            //        Get Data
-        } else {
+        if (!CheckNetworkState.isNetworkAvailable(this)) {
             Toast.makeText(this, "No network connection!", Toast.LENGTH_SHORT).show();
         }
     }
@@ -133,6 +162,9 @@ public class MonthlyActivity extends AppCompatActivity {
     }
 
 
+    ///////////////
+
+
     ////////////// Volley side thread request \\\\\\\\\\\\\
     private void getData(String url, final String conversionDate) {
 
@@ -167,14 +199,33 @@ public class MonthlyActivity extends AppCompatActivity {
 
     }
 
+    ///// Otto Bus receiver \\\\\\\\\\\\\\
     @Subscribe
     public void getMessage(String message) {
         if (dailyDataItems.size() == numberOfDays) {
+            sortedDailyDataItems = sortAList(dailyDataItems);
             runRecyclerView(dailyDataItems);
-            for (DailyDataItem item: dailyDataItems) {
-            totalMonthly += item.getRevenue();
+            for (DailyDataItem item : dailyDataItems) {
+                totalMonthly += item.getRevenue();
             }
             tvTotalMonthly.setText("$" + String.format("%.2f", totalMonthly));
         }
+    }
+
+    ////////// Sort ArrayList of objects DailyDataItem \\\\\\\\\\\\\\\\\\\\\\q
+    private ArrayList<DailyDataItem> sortAList(ArrayList<DailyDataItem> dailyDataItems) {
+        Collections.sort(dailyDataItems, new Comparator<DailyDataItem>() {
+            public int compare(DailyDataItem o1, DailyDataItem o2) {
+                if (o1.getmDate() == null || o2.getmDate() == null)
+                    return 0;
+                return o1.getmDate().compareTo(o2.getmDate());
+            }
+        });
+        return dailyDataItems;
+    }
+
+    public void btnRefresh(View view) {
+        startProcess();
+        Toast.makeText(this, "Refreshing", Toast.LENGTH_SHORT).show();
     }
 }

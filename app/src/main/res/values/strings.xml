@@ -27,8 +27,8 @@
     <string name="tab_text_3">Live</string>
 
     <string-array name="monthly_overview">
-        <item>Last 7 days</item>
-        <item>Last 30 days</item>
+        <item name="7days">Last 7 days</item>
+        <item name="30days">Last 30 days</item>
     </string-array>
 
 </resources>
