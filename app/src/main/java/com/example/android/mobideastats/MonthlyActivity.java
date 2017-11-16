@@ -1,21 +1,12 @@
 package com.example.android.mobideastats;
 
-import android.app.DatePickerDialog;
-import android.app.Dialog;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
-import android.content.Intent;
-import android.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.DatePicker;
+import android.widget.AdapterView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,162 +16,225 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.android.mobideastats.data.BusStation;
 import com.example.android.mobideastats.data.CheckNetworkState;
+import com.example.android.mobideastats.data.DailyDataItem;
+import com.example.android.mobideastats.data.DailyListAdapter;
 import com.example.android.mobideastats.data.DataItem;
-import com.example.android.mobideastats.data.ConversionListAdapter;
 import com.example.android.mobideastats.data.XMLParser;
+import com.squareup.otto.Subscribe;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 public class MonthlyActivity extends AppCompatActivity {
 
+    //    ButterKnife view bindings
+    @BindView(R.id.recyclerView)
+    RecyclerView recyclerView;
+    @BindView(R.id.total)
+    TextView tvTotalMonthly;
+    @BindView(R.id.spinner1)
+    Spinner spinnerIntervalChooser;
 
-    double total;
-    private RecyclerView recyclerView;
+
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
-    private TextView mDatePicker;
-
     ArrayList<DataItem> dataItems = null;
+
     public String url;
-    private DatePicker datePicker;
-    private Calendar calendar;
-    private TextView dateView;
     private int year, month, day;
+    ArrayList<DailyDataItem> dailyDataItems = new ArrayList<>();
+    ArrayList<DailyDataItem> sortedDailyDataItems = new ArrayList<>();
+
+    int numberOfDays = 7;
+    int i = 0;
+
+    double total;
+    Double totalMonthly = 0.00;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_monthly);
 
-        mDatePicker = findViewById(R.id.tvDatePicker);
+        ButterKnife.bind(this);
+        BusStation.getBus().register(this);
 
-        calendar = Calendar.getInstance();
+        isThereActiveNetworkConnection();
+
+        startProcess();
+
+
+/*        spinnerIntervalChooser.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+
+                switch (String.valueOf(spinnerIntervalChooser.getSelectedItemId())) {
+                    case "0":
+                        numberOfDays = 7;
+                        dataItems = null;
+                        startProcess();
+                        break;
+                    case "1":
+                        numberOfDays = 30;
+                        dataItems = null;
+                        startProcess();
+                        break;
+                }
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+            }
+        });*/
+
+    }
+
+    private void startProcess() {
+        for (int i = 0; i < numberOfDays; i++) {
+            String queryUrl = createUrl(i);
+            getData(queryUrl, createDate(i));
+        }
+
+    }
+
+
+    ///////////////// Get date today \\\\\\\\\\\\
+    public Calendar todayIs() {
+
+        Calendar calendar = Calendar.getInstance();
         year = calendar.get(Calendar.YEAR);
         month = calendar.get(Calendar.MONTH);
         day = calendar.get(Calendar.DAY_OF_MONTH);
+        return calendar;
+    }
 
-        createUrl();
+//////////////// Check is there active network connection \\\\\\\\\\
 
-
-//        Check is there active network connection
-        if (CheckNetworkState.isNetworkAvailable(this)) {
-            Toast.makeText(this, "Downloading data!", Toast.LENGTH_SHORT).show();
-            //        Get Data
-            getData(url);
-        } else {
+    public void isThereActiveNetworkConnection() {
+        if (!CheckNetworkState.isNetworkAvailable(this)) {
             Toast.makeText(this, "No network connection!", Toast.LENGTH_SHORT).show();
         }
+    }
 
+///////////// Create queried URL \\\\\\\\\\\\\\\
+    /*
+    * arg i -> number of days back from today
+    **/
+
+    private String createUrl(int i) {
+
+        String urlDate = createDate(i);
+        String BASE_URL = "https://affiliates.mobidea.com/api/export/stats/http-xml?";
+        String login = "260147900";
+        String password = "b7487c967a25aba9ec078d164268197f";
+
+        url = BASE_URL + "login=" + login + "&password=" + password +
+                "&date=" + urlDate + "&currency=USD&format=xml";
+
+        return url;
 
     }
 
-
-    @Override
-    protected Dialog onCreateDialog(int id) {
-        if (id == 999) {
-            return new DatePickerDialog(this, myDateListener, year, month, day);
-        }
-        return null;
-    }
-
-
-    private DatePickerDialog.OnDateSetListener myDateListener = new DatePickerDialog.OnDateSetListener() {
-
-        @Override
-        public void onDateSet(DatePicker arg0, int arg1, int arg2, int arg3) {
-            year = arg1;
-            month = arg2;
-            day = arg3;
-
-
-            createUrl();
-            getData(url);
-        }
-    };
-
-    private void createUrl() {
-
-        calendar.set(year, month, day);
+    private String createDate(int i) {
+        Calendar calendar = todayIs();
+        calendar.add(calendar.DAY_OF_YEAR, -i);
         Date date = calendar.getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String urlDate = sdf.format(date);
+        return urlDate;
+    }
 
+    ///////////// Show data in RecyclerView \\\\\\\\\\\\
+    /*
+    * args ArrayList dailyDataItems
+    * */
+    private void runRecyclerView(ArrayList dailyDataItems) {
 
-        url = "https://affiliates.mobidea.com/api/export/stats/http-xml?login=260147900&password=b7487c967a25aba9ec078d164268197f" +
-                "&date=" + urlDate + "&currency=USD&format=xml";
-
-        mDatePicker.setText(urlDate + "  ");
+        if (dailyDataItems != null) {
+            recyclerView.setVisibility(View.VISIBLE);
+            mLayoutManager = new LinearLayoutManager(getApplicationContext());
+            recyclerView.setLayoutManager(mLayoutManager);
+            mAdapter = new DailyListAdapter(this, dailyDataItems);
+            recyclerView.setAdapter(mAdapter);
+            recyclerView.scrollToPosition(dailyDataItems.size() - 1);
+        } else {
+            recyclerView.setVisibility(View.INVISIBLE);
+        }
     }
 
 
-    private void runRecyclerView() {
+    ////////////// Volley side thread request \\\\\\\\\\\\\
+    private void getData(String url, final String conversionDate) {
 
-        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-        recyclerView.setVisibility(View.VISIBLE);
-        mLayoutManager = new LinearLayoutManager(getApplicationContext());
-        recyclerView.setLayoutManager(mLayoutManager);
-
-        mAdapter = new ConversionListAdapter(this, dataItems);
-        recyclerView.setAdapter(mAdapter);
-
-
-        recyclerView.scrollToPosition(dataItems.size() - 1);
-
-    }
-
-    private void getData(String url) {
-        // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(this);
 
-        // Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        dataItems = XMLParser.parseFeed(response);
-                        if (dataItems != null) {
-                            runRecyclerView();
-                            calculateTotal();
-                        } else {
-                            hideRecyclerView();
-//                            Toast.makeText(MainActivity.this, "No conversions!", Toast.LENGTH_SHORT).show();
-                        }
-
-
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                dataItems = XMLParser.parseFeed(response);
+                if (dataItems != null) {
+                    for (DataItem item : dataItems) {
+                        total += item.getmRevenue();
                     }
-                }, new Response.ErrorListener() {
+                } else {
+                    total = 0;
+                }
+
+                dailyDataItems.add(new DailyDataItem(conversionDate, total));
+
+
+                BusStation.getBus().post("");
+
+                total = 0;
+            }
+        }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-//                Toast.makeText(MainActivity.this, "Unable to fetch data!", Toast.LENGTH_SHORT).show();
             }
         });
-// Add the request to the RequestQueue.
-
         queue.add(stringRequest);
 
-    }
-
-    private void hideRecyclerView() {
-        recyclerView.setVisibility(View.INVISIBLE);
 
     }
 
-    private void calculateTotal() {
-        for (DataItem item : dataItems) {
-            total += item.getmRevenue();
+    ///// Otto Bus receiver \\\\\\\\\\\\\\
+    @Subscribe
+    public void getMessage(String message) {
+        if (dailyDataItems.size() == numberOfDays) {
+            sortedDailyDataItems = sortAList(dailyDataItems);
+            runRecyclerView(dailyDataItems);
+            for (DailyDataItem item : dailyDataItems) {
+                totalMonthly += item.getRevenue();
+            }
+            tvTotalMonthly.setText("$" + String.format("%.2f", totalMonthly));
         }
-        TextView tvTotal = (TextView) findViewById(R.id.total);
-        tvTotal.setText("Total: " + String.format("%.2f", total));
-        total = 0;
     }
 
+    ////////// Sort ArrayList of objects DailyDataItem \\\\\\\\\\\\\\\\\\\\\\q
+    private ArrayList<DailyDataItem> sortAList(ArrayList<DailyDataItem> dailyDataItems) {
+        Collections.sort(dailyDataItems, new Comparator<DailyDataItem>() {
+            public int compare(DailyDataItem o1, DailyDataItem o2) {
+                if (o1.getmDate() == null || o2.getmDate() == null)
+                    return 0;
+                return o1.getmDate().compareTo(o2.getmDate());
+            }
+        });
+        return dailyDataItems;
+    }
 
-    public void datePicker(View view) {
-        showDialog(999);
-
+    public void btnRefresh(View view) {
+        startProcess();
+        Toast.makeText(this, "Refreshing", Toast.LENGTH_SHORT).show();
     }
 }

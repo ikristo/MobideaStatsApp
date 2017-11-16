@@ -25,4 +25,10 @@
     <string name="tab_text_1">Daily Stats</string>
     <string name="tab_text_2">Conversions</string>
     <string name="tab_text_3">Live</string>
+
+    <string-array name="monthly_overview">
+        <item name="7days">Last 7 days</item>
+        <item name="30days">Last 30 days</item>
+    </string-array>
+
 </resources>

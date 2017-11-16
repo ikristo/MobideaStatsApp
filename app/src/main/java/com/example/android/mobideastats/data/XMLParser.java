@@ -93,7 +93,6 @@ public class XMLParser {
 
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e("jebiga", "lista ti je nula");
             return null;
 
         }
