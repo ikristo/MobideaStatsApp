@@ -2,18 +2,11 @@ package com.example.android.mobideastats;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.content.Intent;
-import android.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.DatePicker;
 import android.widget.TextView;
@@ -35,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity {
+public class DailyActivity extends AppCompatActivity {
 
 
     double total;
@@ -63,19 +56,9 @@ public class MainActivity extends AppCompatActivity {
         month = calendar.get(Calendar.MONTH);
         day = calendar.get(Calendar.DAY_OF_MONTH);
 
-        createUrl();
-
-
-//        Check is there active network connection
-        if (CheckNetworkState.isNetworkAvailable(this)) {
-            Toast.makeText(this, "Downloading data!", Toast.LENGTH_SHORT).show();
-            //        Get Data
-            getData(url);
-        } else {
-            Toast.makeText(this, "No network connection!", Toast.LENGTH_SHORT).show();
-        }
-
-
+        Intent intent = getIntent();
+        createUrl(intent.getStringExtra("date"));
+        getData(url);
     }
 
 
@@ -116,6 +99,14 @@ public class MainActivity extends AppCompatActivity {
         mDatePicker.setText(urlDate);
     }
 
+    private void createUrl(String date) {
+
+                url = "https://affiliates.mobidea.com/api/export/stats/http-xml?login=260147900&password=b7487c967a25aba9ec078d164268197f" +
+                "&date=" + date + "&currency=USD&format=xml";
+
+        mDatePicker.setText(date);
+    }
+
 
     private void runRecyclerView() {
 
@@ -147,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                             calculateTotal();
                         } else {
                             hideRecyclerView();
-                            Toast.makeText(MainActivity.this, "No conversions!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(DailyActivity.this, "No conversions!", Toast.LENGTH_SHORT).show();
                         }
 
 
@@ -155,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(MainActivity.this, "Unable to fetch data!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(DailyActivity.this, "Unable to fetch data!", Toast.LENGTH_SHORT).show();
             }
         });
 // Add the request to the RequestQueue.
@@ -165,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void hideRecyclerView() {
-    recyclerView.setVisibility(View.INVISIBLE);
+        recyclerView.setVisibility(View.INVISIBLE);
 
     }
 

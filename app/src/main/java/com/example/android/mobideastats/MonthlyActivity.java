@@ -31,10 +31,20 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MonthlyActivity extends AppCompatActivity {
 
-    double total;
-    private RecyclerView recyclerView;
+    //    ButterKnife view bindings
+    @BindView(R.id.recyclerView)
+    RecyclerView recyclerView;
+    @BindView(R.id.total)
+    TextView tvTotalMonthly;
+    @BindView(R.id.spinner1)
+    Spinner spinnerIntervalChooser;
+
+
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
     ArrayList<DataItem> dataItems = null;
@@ -47,42 +57,46 @@ public class MonthlyActivity extends AppCompatActivity {
     int numberOfDays = 7;
     int i = 0;
 
-    TextView tvTotalMonthly;
+    double total;
     Double totalMonthly = 0.00;
-    Spinner spinnerIntervalChooser;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_monthly);
+
+        ButterKnife.bind(this);
         BusStation.getBus().register(this);
+
         isThereActiveNetworkConnection();
-        tvTotalMonthly = findViewById(R.id.total);
-        spinnerIntervalChooser = findViewById(R.id.spinner1);
 
         startProcess();
 
 
-       /* spinnerIntervalChooser.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+/*        spinnerIntervalChooser.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
 
                 switch (String.valueOf(spinnerIntervalChooser.getSelectedItemId())) {
-                    case "0": numberOfDays = 7;
+                    case "0":
+                        numberOfDays = 7;
+                        dataItems = null;
                         startProcess();
                         break;
-                    case "1": numberOfDays = 30;
+                    case "1":
+                        numberOfDays = 30;
+                        dataItems = null;
                         startProcess();
                         break;
                 }
+
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
             }
-        });
-*/
+        });*/
 
     }
 
@@ -147,8 +161,6 @@ public class MonthlyActivity extends AppCompatActivity {
     * */
     private void runRecyclerView(ArrayList dailyDataItems) {
 
-        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
-
         if (dailyDataItems != null) {
             recyclerView.setVisibility(View.VISIBLE);
             mLayoutManager = new LinearLayoutManager(getApplicationContext());
@@ -160,9 +172,6 @@ public class MonthlyActivity extends AppCompatActivity {
             recyclerView.setVisibility(View.INVISIBLE);
         }
     }
-
-
-    ///////////////
 
 
     ////////////// Volley side thread request \\\\\\\\\\\\\
